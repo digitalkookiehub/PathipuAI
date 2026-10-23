@@ -116,9 +116,10 @@ def restore_backup(settings: Settings, archive: Path, *, force: bool = False) ->
     has_data = settings.database_path.exists() or (books.is_dir() and any(books.iterdir()))
     if has_data and not force:
         raise BackupError("There is already data here. Stop the app, then run again with --force to replace it.")
-    settings.data_dir.parent.mkdir(parents=True, exist_ok=True)  # a brand-new server has no folders yet
+    # Unpack inside the data folder: it is the one writable place in the container, and moves stay on one disk.
+    settings.data_dir.mkdir(parents=True, exist_ok=True)
     try:
-        with tarfile.open(archive, "r:gz") as tar, tempfile.TemporaryDirectory(dir=settings.data_dir.parent) as scratch:
+        with tarfile.open(archive, "r:gz") as tar, tempfile.TemporaryDirectory(dir=settings.data_dir) as scratch:
             members = _safe_members(tar)
             # Members were checked above; newer Pythons add their own "data" filter on top of that.
             extra = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
