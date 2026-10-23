@@ -33,7 +33,7 @@ export default function RegisterPage() {
 
   if (done !== null) {
     return (
-      <AuthCard title="Account requested" intro="You will be able to sign in once the owner approves your account.">
+      <AuthCard title="Account created" intro="Welcome to PathippuAI.">
         <Alert status="success">
           <AlertIcon />
           {done}
@@ -43,7 +43,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthCard title="Create an account" intro="The owner approves every new account before it can open the books.">
+    <AuthCard title="Create an account" intro="Choose a username and password. You can sign in straight away.">
       <form onSubmit={submit}>
         <Stack spacing={4}>
           <FormControl isRequired>
@@ -76,8 +76,8 @@ export default function RegisterPage() {
               {error}
             </Alert>
           )}
-          <Button type="submit" colorScheme="blue" isLoading={busy} loadingText="Sending…">
-            Ask for an account
+          <Button type="submit" colorScheme="blue" isLoading={busy} loadingText="Creating…">
+            Create my account
           </Button>
         </Stack>
       </form>

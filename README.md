@@ -145,7 +145,7 @@ and are tested with `npm test` in `frontend/`.
   sign-in screen when you open the app on the same computer; on a server use
   `python -m scripts.create_user NAME` (add `--reset` to change a password). Set `AUTH_REQUIRED=false` only for
   private local use.
-- **Accounts:** people can sign up from the sign-in page; an owner approves them on the **Accounts** page. **Forgot password** emails a 30-minute one-time link (needs the `SMTP_*` settings; see docs/DEPLOYMENT.md).
+- **Accounts:** people can sign up from the sign-in page and sign in at once; owners can disable or remove accounts on the **Accounts** page. **Forgot password** emails a 30-minute one-time link (needs the `SMTP_*` settings; see docs/DEPLOYMENT.md).
 - **Deploy:** Docker + Nginx + free HTTPS on a Ubuntu VPS: see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
   (install, environment, start, domain/HTTPS, updates, backup/restore, logs, and the manual quality checklist).
 - **Backups:** `python -m scripts.backup create|list|restore` (database + original PDFs), or `deploy/backup.sh`

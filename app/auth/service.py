@@ -43,10 +43,6 @@ class Account:
     created_at: str
 
 
-class AccountPendingError(AuthError):
-    """The password is right but the owner has not approved the account yet."""
-
-
 @dataclass(frozen=True)
 class Session:
     """A valid login session."""
@@ -120,8 +116,6 @@ def authenticate(conn: sqlite3.Connection, username: str, password: str) -> User
     valid = verify_password(password, row["password_hash"] if row else None)
     if row is None or not valid:
         return None
-    if row["pending"]:
-        raise AccountPendingError("Your account is waiting for the owner's approval.")
     if not row["is_active"]:
         return None
     return User(id=row["id"], username=row["username"], is_admin=bool(row["is_admin"]))

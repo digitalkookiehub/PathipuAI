@@ -16,7 +16,6 @@ from app.api.deps import (
 )
 from app.auth.service import (
     EMAIL_RE,
-    AccountPendingError,
     AuthError,
     User,
     authenticate,
@@ -163,10 +162,7 @@ def login(
             detail=f"Too many wrong passwords. Please wait {max(1, round(wait / 60))} minute(s) and try again.",
             headers={"Retry-After": str(wait)},
         )
-    try:
-        user = authenticate(conn, body.username, body.password)
-    except AccountPendingError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    user = authenticate(conn, body.username, body.password)
     if user is None:
         throttle.record_failure(*keys)
         logger.warning("Failed sign-in from %s", keys[1])

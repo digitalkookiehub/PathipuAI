@@ -92,23 +92,31 @@ def reset_link(mail):
 # --- sign-up ----------------------------------------------------------------------------------------------------
 
 
-def test_sign_up_waits_for_the_owner_and_tells_them(owner, site_settings, sent):
+def test_sign_up_works_at_once_and_tells_the_owner(owner, site_settings, sent):
     visitor = make_client(site_settings)
     answer = register(visitor)
-    assert answer.status_code == 201 and "waiting for the owner" in answer.json()["message"]
+    assert answer.status_code == 201 and "sign in now" in answer.json()["message"]
     assert [m["to"] for m in sent] == ["guru@example.test"]
     assert "helper" in sent[0]["body"] and "https://books.example.test/accounts" in sent[0]["body"]
-    pending = sign_in(visitor)
-    assert pending.status_code == 403 and "waiting for the owner" in pending.json()["detail"]
-    assert sign_in(visitor, password="not the password").status_code == 401  # no hint without the right password
-    assert visitor.get("/api/books").status_code == 401
-
-    helper = user_id(site_settings, "helper")
-    approved = owner.post(f"/api/admin/users/{helper}/approve", headers=csrf(owner))
-    assert approved.status_code == 200 and approved.json()["status"] == "active"
-    assert sent[-1]["to"] == "helper@example.test" and "approved" in sent[-1]["subject"]
+    assert sign_in(visitor, password="not the password").status_code == 401
     assert sign_in(visitor).status_code == 200 and visitor.get("/api/books").status_code == 200
     assert visitor.get("/api/auth/status").json()["is_admin"] is False
+    status = {a["username"]: a["status"] for a in owner.get("/api/admin/users").json()}
+    assert status["helper"] == "active"
+
+
+def test_accounts_left_waiting_by_older_versions_can_sign_in(owner, site_settings):
+    """Migration 008 switches on accounts that an older version left waiting for approval."""
+    from app.db import migrate
+
+    db = connect(site_settings.database_path)
+    create_user(db, "waiting", PASSWORD, email="waiting@example.test", pending=True)
+    db.execute("DELETE FROM schema_migrations WHERE name = '008_no_approval.sql'")
+    db.commit()
+    assert db.execute("SELECT is_active FROM users WHERE username = 'waiting'").fetchone()[0] == 0
+    assert "008_no_approval.sql" in migrate(db)
+    db.close()
+    assert sign_in(make_client(site_settings), "waiting").status_code == 200
 
 
 def test_sign_up_checks_the_details(owner, site_settings, sent):
@@ -171,9 +179,10 @@ def test_forgot_password_does_not_reveal_who_has_an_account(owner, site_settings
     assert len(sent) == 1
 
 
-def test_pending_and_disabled_accounts_get_no_reset_link(owner, site_settings, sent):
+def test_disabled_accounts_get_no_reset_link(owner, site_settings, sent):
     visitor = make_client(site_settings)
     register(visitor)
+    owner.post(f"/api/admin/users/{user_id(site_settings, 'helper')}/disable", headers=csrf(owner))
     sent.clear()
     visitor.post("/api/auth/forgot-password", json={"email": "helper@example.test"})
     assert sent == []

@@ -70,7 +70,7 @@ export default function AccountsPage() {
         Accounts
       </Heading>
       <Text color="gray.600" mb={5}>
-        Everyone with an active account can see and change every book. Approve only people you know.
+        Everyone with an active account can see and change every book. Disable or remove accounts you do not know.
       </Text>
       {waiting > 0 && (
         <Alert status="warning" mb={4}>

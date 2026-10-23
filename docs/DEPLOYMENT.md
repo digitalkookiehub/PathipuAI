@@ -76,9 +76,9 @@ Open `https://books.example.com` and sign in.
 ### Accounts, sign-up and forgotten passwords
 
 - The first account (made with `scripts.create_user`) is the **owner**. Owners see an **Accounts** page.
-- Anyone can use **Create an account** on the sign-in page, but the account cannot sign in until an owner approves
-  it on the Accounts page. Owners get an email about each new sign-up (when email is set up). Every active account
-  can see and change every book, so approve only people you know.
+- Anyone can use **Create an account** on the sign-in page and sign in straight away; sign-in only checks the
+  username and password in the database. Owners get an email about each new account (when email is set up) and can
+  disable or remove accounts on the Accounts page. Every active account can see and change every book.
 - **Forgot password** emails a one-time link that works for 30 minutes. It needs email settings in `.env`:
 
   ```env

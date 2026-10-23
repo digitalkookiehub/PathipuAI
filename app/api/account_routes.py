@@ -96,11 +96,11 @@ def register(
     conn: sqlite3.Connection = Depends(get_conn),
     settings: Settings = Depends(get_settings),
 ) -> dict[str, str]:
-    """Ask for an account. It cannot sign in until the owner approves it on the Accounts page."""
+    """Create an account that can sign in straight away. Owners are told, and can disable it on the Accounts page."""
     check_origin(request)
     _limit(f"register-ip:{_client_ip(request, settings)}")
     try:
-        user = create_user(conn, body.username, body.password, email=body.email, pending=True)
+        user = create_user(conn, body.username, body.password, email=body.email)
     except AuthError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     site = settings.public_url or str(request.base_url).rstrip("/")
@@ -109,11 +109,11 @@ def register(
             send_email,
             settings,
             owner,
-            "PathippuAI: a new account is waiting for approval",
-            f"{user.username} ({body.email.strip().lower()}) asked for an account.\n\n"
-            f"Approve or remove it on the Accounts page: {site}/accounts\n",
+            "PathippuAI: a new account was created",
+            f"{user.username} ({body.email.strip().lower()}) created an account.\n\n"
+            f"If you do not know this person, disable or remove it on the Accounts page: {site}/accounts\n",
         )
-    return {"message": "Thank you. Your account was created and is waiting for the owner's approval."}
+    return {"message": "Your account was created. You can sign in now."}
 
 
 @router.post("/forgot-password", status_code=202)
