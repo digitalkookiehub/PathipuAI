@@ -1,0 +1,71 @@
+# PathippuAI on a single Ubuntu VPS: the app (not reachable from the internet) behind Nginx with HTTPS.
+# Setup steps are in docs/DEPLOYMENT.md. Copy .env.production.example to .env and fill it in first.
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        INSTALL_CAREFUL: "${INSTALL_CAREFUL:-false}"
+    image: pathippuai:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      DATABASE_PATH: /data/pathippuai.db
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "true"
+    volumes:
+      - pathippu-data:/data          # the database and every book: back this up
+      - pathippu-home:/home/pathippu # downloaded model files and caches
+    expose:
+      - "8000"                       # only Nginx can reach it
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 3g                    # keep the server responsive; raise it for the careful reading method
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DOMAIN: "${DOMAIN:?Set DOMAIN in .env (for example books.example.com)}"
+      NGINX_ENVSUBST_FILTER: "DOMAIN"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/templates:/etc/nginx/templates:ro
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Used only to get and renew the HTTPS certificate: see deploy/init-https.sh
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["tools"]
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+
+volumes:
+  pathippu-data:
+  pathippu-home:
+  certbot-conf:
+  certbot-www:

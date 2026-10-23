@@ -1,0 +1,2 @@
+# Optional "careful reading" engine for Tamil (slower, more accurate). Pulls in torch.
+ocr-tamil>=0.4.1

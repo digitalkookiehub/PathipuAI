@@ -1,0 +1,24 @@
+.env
+data/
+*.db
+*.sqlite3
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+# private manuscripts
+project_det/*.pdf
+*.pdf
+!tests/fixtures/*.pdf
+tessdata/
+project_det/ground_truth/
+project_det/*.png
+.env.*
+!.env.example
+!.env.production.example
+backups/
+project_det/

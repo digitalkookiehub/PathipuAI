@@ -1,0 +1,16 @@
+fastapi>=0.115,<1
+uvicorn>=0.30
+python-multipart>=0.0.9
+pypdfium2>=4.30
+pytesseract>=0.3.10
+Pillow>=10.0
+opencv-python-headless>=4.9
+reportlab>=4.1
+python-dotenv>=1.0
+bcrypt>=4.0
+rapidfuzz>=3.0
+anthropic>=1.0
+openai>=1.0
+fpdf2>=2.8
+uharfbuzz>=0.40
+fonttools>=4.50
