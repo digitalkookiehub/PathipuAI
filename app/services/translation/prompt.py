@@ -27,7 +27,8 @@ def build_system_prompt(request: TranslationRequest) -> str:
     ]
     if request.previous_failed:
         lines.append(
-            f"- IMPORTANT: your previous answer was not written in {target}. Translate every sentence into {target} this time."
+            f"- IMPORTANT: your previous answer was not written in {target}. Translate every sentence into {target} this "
+            f"time, using only {target} letters (no letters of other scripts such as Gujarati or Bengali)."
         )
     if request.is_heading:
         lines.append("- This text is a chapter heading: translate it as a short heading on one line.")

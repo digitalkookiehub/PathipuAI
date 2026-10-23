@@ -16,6 +16,7 @@ _BLOCKS = {
 MIN_LETTERS = 30  # shorter texts (headings, single words) are not judged
 MAX_SOURCE_SHARE = 0.5  # more than this share in the book's own language means it was not translated
 MIN_TARGET_SHARE = 0.3  # less than this share in the target language means the wrong language was used
+INDIC_RANGE = (0x0900, 0x0DFF)  # Devanagari to Sinhala: every Indic script block
 
 
 def letter_counts(text: str) -> dict[str, int]:
@@ -34,6 +35,22 @@ def letter_counts(text: str) -> dict[str, int]:
             if category.startswith("L") and code < 0x250:  # Latin letters
                 counts["en"] = counts.get("en", 0) + 1
     return counts
+
+
+def stray_letters(text: str, source_language: str, target_language: str) -> list[str]:
+    """Letters from an Indic script that is neither the target's nor the source's, e.g. a Gujarati letter in Telugu.
+
+    Models sometimes slip one in; the fonts cannot draw them, so they would show as empty boxes in the PDF.
+    """
+    allowed = [_BLOCKS[code] for code in (source_language, target_language) if code in _BLOCKS]
+    stray = []
+    for char in text:
+        code = ord(char)
+        if not INDIC_RANGE[0] <= code <= INDIC_RANGE[1] or any(low <= code <= high for low, high in allowed):
+            continue
+        if unicodedata.category(char)[0] in "LM" and char not in stray:
+            stray.append(char)
+    return stray
 
 
 def untranslated_reason(

@@ -26,7 +26,7 @@ from app.services.translation.base import (
     TranslationRequest,
 )
 from app.services.translation.chunking import split_into_chunks, text_hash
-from app.services.translation.script import untranslated_reason
+from app.services.translation.script import stray_letters, untranslated_reason
 
 logger = logging.getLogger(__name__)
 
@@ -386,6 +386,12 @@ def _translate_with_retry(
                 if provider.is_test  # test mode only marks the source text; it is not meant to be a translation
                 else untranslated_reason(text, request.source_language, request.target_language, keep_unchanged)
             )
+            if reason is None and not provider.is_test:
+                stray = stray_letters(text, request.source_language, request.target_language)
+                if stray:
+                    reason = "This part contains letters from another script: " + ", ".join(
+                        f"“{c}” (U+{ord(c):04X})" for c in stray
+                    ) + "."
             if reason is None:
                 return _Outcome(text, None, attempt)
             if attempt >= settings.translation_max_attempts:

@@ -300,20 +300,28 @@ def build_publication(
 
 def _check_glyphs(publication: Publication) -> None:
     """Refuse to publish characters the bundled fonts cannot draw (they would appear as empty boxes)."""
-    texts: dict[str, list[str]] = {
-        publication.source_language: [publication.title, publication.author, publication.details]
-    }
+    source = publication.source_language
+    front = (publication.title, publication.author, publication.details)
+    places = [("the title page", Block(text, source)) for text in front]
     for section in publication.sections:
-        for block in [*section.headings, *section.blocks]:
-            texts.setdefault(block.language, []).append(block.text)
-    lines = []
-    for language, parts in texts.items():
-        missing = missing_glyphs("".join(parts), language, publication.source_language)
-        if missing:
-            shown = ", ".join(f"“{c}” (U+{ord(c):04X})" for c in sorted(missing)[:10])
-            lines.append(f"{_language_name(language)}: {shown}")
+        chapter = f"“{section.headings[0].text}”" if section.headings else "a chapter"
+        places += [(chapter, block) for block in [*section.headings, *section.blocks]]
+    lines: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    for chapter, block in places:
+        for char in sorted(missing_glyphs(block.text, block.language, source)):
+            if (block.language, char) in seen:
+                continue
+            seen.add((block.language, char))
+            at = block.text.index(char)
+            snippet = " ".join(block.text[max(0, at - 25) : at + 25].split())
+            name = _language_name(block.language)
+            lines.append(f"{name}: “{char}” (U+{ord(char):04X}) in {chapter}, near “…{snippet}…”")
     if lines:
+        hint = "often OCR mistakes"
+        if any(language != source for language, _ in seen):
+            hint += "; in a translation, fix the letter on the Review translations page or translate that part again"
         raise PublishError(
             "The text contains characters the fonts cannot draw, so they would show as empty boxes. "
-            "Please correct them (often OCR mistakes):\n- " + "\n- ".join(lines)
+            f"Please correct them ({hint}):\n- " + "\n- ".join(lines[:15])
         )

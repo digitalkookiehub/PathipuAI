@@ -12,7 +12,7 @@ from app.services.translation import review as tr_review
 from app.services.translation import service as tr
 from app.services.translation.mock import MockProvider
 from app.services.translation.prompt import build_system_prompt
-from app.services.translation.script import letter_counts, untranslated_reason
+from app.services.translation.script import letter_counts, stray_letters, untranslated_reason
 
 TAMIL = "இன்றைக்கும் பாபா நம்முடனிருந்து நமக்கு உதவி செய்கிறார் என்பதை மக்கள் அறிந்து வைத்திருக்கிறார்கள்"
 TELUGU = "ఈ రోజుకూ బాబా మనతోనే ఉండి మనకు సహాయం చేస్తున్నారని ప్రజలకు తెలుసు, ఆయన కృప ఎల్లప్పుడూ ఉంటుంది"
@@ -195,3 +195,34 @@ def test_api_flags_untranslated_parts(conn, settings, book_id, chapter_id):
     assert cell["untranslated"] == 1
     blocked = client.post(f"{base}/chapters/{chapter_id}/translation/te/1/approve")
     assert blocked.status_code == 400 and "still mostly in Tamil" in blocked.json()["detail"]
+
+
+# --- letters from another script (a Gujarati letter slipped into Telugu) -----------------------------------------
+
+STRAY = TELUGU[:20] + "ષે" + TELUGU[20:]  # Gujarati ષ (U+0AB7) and ે (U+0AC7), as in the report
+
+
+def test_letters_of_another_script_are_found():
+    assert stray_letters(STRAY, "ta", "te") == ["ષ", "ે"]
+    assert stray_letters(TELUGU, "ta", "te") == []
+    assert stray_letters(f"{TELUGU} ஓம் நமோ", "ta", "te") == []  # the book's own script (kept terms) is fine
+    assert stray_letters(f"{TELUGU} Om 123 ॥", "ta", "te") == []  # Latin, digits and the danda punctuation are fine
+
+
+def test_a_translation_with_a_stray_letter_is_asked_for_again(conn, settings, book_id, chapter_id):
+    provider = Scripted(["Heading", STRAY, TELUGU])
+    summary = run(conn, settings, book_id, provider)
+    assert (summary.completed, summary.failed) == (2, 0)
+    assert [r.previous_failed for r in provider.requests] == [False, False, True]
+    assert body(conn, chapter_id)["translated_text"] == TELUGU
+
+
+def test_a_saved_stray_letter_is_named_with_its_place_when_exporting(conn, settings, book_id, chapter_id):
+    run(conn, settings, book_id, Scripted(["Heading", TELUGU]))
+    conn.execute("UPDATE translations SET translated_text = ?, status = 'approved' WHERE chunk_index = 1", (STRAY,))
+    conn.execute("UPDATE translations SET status = 'approved' WHERE chunk_index = 0")
+    conn.commit()
+    with pytest.raises(publishing.PublishError) as caught:
+        publishing.build_publication(conn, settings, book_id, "target", ["te"])
+    message = str(caught.value)
+    assert "U+0AB7" in message and "near “…" in message and "Review translations" in message
