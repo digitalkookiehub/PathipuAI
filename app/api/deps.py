@@ -55,7 +55,7 @@ def require_user(
 ) -> User:
     """The signed-in user, or 401. Changes (POST/PUT/DELETE) also need the CSRF token and a same-site origin."""
     if not settings.auth_required:
-        return User(id=0, username="local")
+        return User(id=0, username="local", is_admin=True)
     session = get_session(conn, request.cookies.get(SESSION_COOKIE))
     if session is None:
         raise HTTPException(status_code=401, detail="Please sign in.")
@@ -64,3 +64,10 @@ def require_user(
         if not hmac.compare_digest(request.headers.get(CSRF_HEADER, ""), session.csrf_token):
             raise HTTPException(status_code=403, detail="This page has expired. Please reload it and try again.")
     return session.user
+
+
+def require_admin(user: User = Depends(require_user)) -> User:
+    """The signed-in owner, or 403 for everyone else."""
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Only the owner can manage accounts.")
+    return user

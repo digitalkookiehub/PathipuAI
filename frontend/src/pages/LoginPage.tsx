@@ -1,6 +1,21 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Alert, AlertIcon, Box, Button, Center, FormControl, FormLabel, Heading, Input, Stack, Text } from '@chakra-ui/react'
+import {
+  Alert,
+  AlertIcon,
+  Box,
+  Button,
+  Center,
+  Flex,
+  FormControl,
+  FormLabel,
+  Heading,
+  Input,
+  Link,
+  Stack,
+  Text,
+} from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../authState'
 import { errorMessage } from '../hooks/useAsync'
@@ -61,9 +76,14 @@ export default function LoginPage() {
             </Button>
           </Stack>
         </form>
-        <Text fontSize="sm" color="gray.500" mt={5}>
-          Forgot the password? On the server run: <code>python -m scripts.create_user YOUR-NAME --reset</code>
-        </Text>
+        <Flex justify="space-between" mt={5} fontSize="sm">
+          <Link as={RouterLink} to="/forgot-password" color="blue.600">
+            Forgot password?
+          </Link>
+          <Link as={RouterLink} to="/register" color="blue.600">
+            Create an account
+          </Link>
+        </Flex>
       </Box>
     </Center>
   )

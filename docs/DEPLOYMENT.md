@@ -73,6 +73,28 @@ Open `https://books.example.com` and sign in.
 0 4 * * 1 cd /home/YOU/PathippuAI && docker compose run --rm certbot renew --quiet && docker compose exec -T nginx nginx -s reload
 ```
 
+### Accounts, sign-up and forgotten passwords
+
+- The first account (made with `scripts.create_user`) is the **owner**. Owners see an **Accounts** page.
+- Anyone can use **Create an account** on the sign-in page, but the account cannot sign in until an owner approves
+  it on the Accounts page. Owners get an email about each new sign-up (when email is set up). Every active account
+  can see and change every book, so approve only people you know.
+- **Forgot password** emails a one-time link that works for 30 minutes. It needs email settings in `.env`:
+
+  ```env
+  SMTP_HOST=smtp.gmail.com
+  SMTP_PORT=587
+  SMTP_SECURITY=starttls
+  SMTP_USERNAME=yourname@gmail.com
+  SMTP_PASSWORD=the-16-letter-app-password
+  SMTP_FROM=yourname@gmail.com
+  ```
+
+  For Gmail, turn on 2-Step Verification and create an **App Password** (Google Account → Security → App
+  passwords); your normal Gmail password will not work. Then run `docker compose up -d app`. Links use
+  `https://DOMAIN` (or `PUBLIC_URL`). Without email, an owner can still reset a password with
+  `docker compose exec app python -m scripts.create_user NAME --reset`.
+
 ## 5. Updating
 
 ```bash

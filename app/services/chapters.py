@@ -39,7 +39,7 @@ def _validate_range(conn: sqlite3.Connection, book_id: int, start: int, end: int
     ).fetchone()
     if clash:
         raise ChapterError(
-            f"Pages {clash['start_page']}-{clash['end_page']} already belong to the chapter \"{clash['title']}\"."
+            f'Pages {clash["start_page"]}-{clash["end_page"]} already belong to the chapter "{clash["title"]}".'
         )
 
 

@@ -12,7 +12,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus(await api.authStatus())
     } catch {
       // The server is unreachable: show the sign-in page rather than a blank screen.
-      setStatus({ auth_required: true, authenticated: false, username: null, setup_required: false })
+      setStatus({
+        auth_required: true,
+        authenticated: false,
+        username: null,
+        is_admin: false,
+        setup_required: false,
+        reset_available: false,
+      })
     }
   }, [])
 
@@ -23,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Any request answered with "please sign in" (for example after the session expired) returns to the sign-in page.
   useEffect(() => {
     const onUnauthorized = () =>
-      setStatus((current) => (current === null ? current : { ...current, authenticated: false, username: null }))
+      setStatus((current) => (current === null ? current : { ...current, authenticated: false, username: null, is_admin: false }))
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
     return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized)
   }, [])

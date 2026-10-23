@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.account_routes import admin_router
+from app.api.account_routes import router as account_router
 from app.api.auth_routes import router as auth_router
 from app.api.planning_routes import router as planning_router
 from app.api.publishing_routes import router as publishing_router
@@ -68,6 +70,8 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(auth_router)
+    app.include_router(account_router)
+    app.include_router(admin_router)
     app.include_router(router)
     app.include_router(planning_router)
     app.include_router(translation_router)

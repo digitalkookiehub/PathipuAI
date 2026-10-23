@@ -24,6 +24,11 @@ export default function Layout() {
             <Link as={NavLink} to="/books/new" {...navLinkStyle} _activeLink={{ bg: 'blue.100' }}>
               Add a book
             </Link>
+            {status?.is_admin === true && status.auth_required && (
+              <Link as={NavLink} to="/accounts" {...navLinkStyle} _activeLink={{ bg: 'blue.100' }}>
+                Accounts
+              </Link>
+            )}
             <Spacer />
             {showAccount && (
               <Flex align="center" gap={3}>

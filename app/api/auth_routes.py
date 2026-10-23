@@ -15,6 +15,8 @@ from app.api.deps import (
     require_user,
 )
 from app.auth.service import (
+    EMAIL_RE,
+    AccountPendingError,
     AuthError,
     User,
     authenticate,
@@ -95,13 +97,22 @@ def status(
 ) -> dict[str, object]:
     """Whether sign-in is needed, whether this browser is signed in, and whether the first account must be created."""
     if not settings.auth_required:
-        return {"auth_required": False, "authenticated": True, "username": "local", "setup_required": False}
+        return {
+            "auth_required": False,
+            "authenticated": True,
+            "username": "local",
+            "is_admin": True,
+            "setup_required": False,
+            "reset_available": False,
+        }
     session = get_session(conn, request.cookies.get(SESSION_COOKIE))
     return {
         "auth_required": True,
         "authenticated": session is not None,
         "username": session.user.username if session else None,
+        "is_admin": bool(session and session.user.is_admin),
         "setup_required": user_count(conn) == 0,
+        "reset_available": settings.mail_enabled,
     }
 
 
@@ -126,7 +137,8 @@ def setup(
             "Run: docker compose exec app python -m scripts.create_user",
         )
     try:
-        user = create_user(conn, body.username, body.password)
+        email = body.username.strip() if EMAIL_RE.fullmatch(body.username.strip()) else None
+        user = create_user(conn, body.username, body.password, email=email, is_admin=True)
     except AuthError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _start(response, conn, settings, user)
@@ -151,7 +163,10 @@ def login(
             detail=f"Too many wrong passwords. Please wait {max(1, round(wait / 60))} minute(s) and try again.",
             headers={"Retry-After": str(wait)},
         )
-    user = authenticate(conn, body.username, body.password)
+    try:
+        user = authenticate(conn, body.username, body.password)
+    except AccountPendingError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     if user is None:
         throttle.record_failure(*keys)
         logger.warning("Failed sign-in from %s", keys[1])

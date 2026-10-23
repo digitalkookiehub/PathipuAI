@@ -258,7 +258,7 @@ def prepare(
                 " …" if len(missing) > MAX_LISTED_PAGES else ""
             )
             raise TranslationError(
-                f"The chapter \"{chapter['title']}\" has pages that are not approved yet: {shown}. "
+                f'The chapter "{chapter["title"]}" has pages that are not approved yet: {shown}. '
                 "Only approved text is translated."
             )
         else:
@@ -284,7 +284,7 @@ def prepare(
         if replaced:
             name = SUPPORTED_LANGUAGES[code][0]
             protected.append(
-                f"\"{chapter['title']}\" in {name} ({replaced} approved or edited part{'s' if replaced != 1 else ''})"
+                f'"{chapter["title"]}" in {name} ({replaced} approved or edited part{"s" if replaced != 1 else ""})'
             )
     if protected and not overwrite:
         raise NeedsConfirmation(

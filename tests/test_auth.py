@@ -120,7 +120,14 @@ def test_everything_except_health_and_sign_in_needs_a_login(client):
     assert client.post("/api/books/1/ocr", json={}).status_code == 401
     assert client.delete("/api/books/1?confirm=true").status_code == 401
     status = client.get("/api/auth/status").json()
-    assert status == {"auth_required": True, "authenticated": False, "username": None, "setup_required": True}
+    assert status == {
+        "auth_required": True,
+        "authenticated": False,
+        "username": None,
+        "is_admin": False,
+        "setup_required": True,
+        "reset_available": False,
+    }
 
 
 def test_login_can_be_switched_off_for_local_use(settings):

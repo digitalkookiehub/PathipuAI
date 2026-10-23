@@ -73,7 +73,27 @@ export interface AuthStatus {
   auth_required: boolean
   authenticated: boolean
   username: string | null
+  is_admin: boolean
   setup_required: boolean
+  /** whether "Forgot password" can email a link (email is set up on the server) */
+  reset_available: boolean
+}
+
+export type AccountStatus = 'pending' | 'active' | 'disabled'
+
+export interface Account {
+  id: number
+  username: string
+  email: string | null
+  is_admin: boolean
+  status: AccountStatus
+  created_at: string
+}
+
+export interface Registration {
+  username: string
+  email: string
+  password: string
 }
 
 export const api = {
@@ -88,6 +108,18 @@ export const api = {
       '/auth/change-password',
       jsonInit('POST', { current_password: currentPassword, new_password: newPassword }),
     ),
+  register: (input: Registration) => request<{ message: string }>('/auth/register', jsonInit('POST', input)),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', jsonInit('POST', { email })),
+  resetPassword: (token: string, newPassword: string) =>
+    request<void>('/auth/reset-password', jsonInit('POST', { token, new_password: newPassword })),
+
+  accounts: () => request<Account[]>('/admin/users'),
+  approveAccount: (id: number) => request<Account>(`/admin/users/${id}/approve`, { method: 'POST' }),
+  disableAccount: (id: number) => request<Account>(`/admin/users/${id}/disable`, { method: 'POST' }),
+  setOwner: (id: number, isAdmin: boolean) =>
+    request<Account>(`/admin/users/${id}/owner`, jsonInit('POST', { is_admin: isAdmin })),
+  removeAccount: (id: number) => request<void>(`/admin/users/${id}`, { method: 'DELETE' }),
 
   languages: () => request<Language[]>('/languages'),
   books: () => request<Book[]>('/books'),

@@ -44,6 +44,20 @@ class Settings:
     cookie_secure: bool = False
     session_hours: int = 12
     trust_proxy: bool = False
+    # Email for password-reset links and sign-up notices (any SMTP server, e.g. Gmail with an App Password).
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_security: str = "starttls"  # "starttls" (port 587), "ssl" (port 465) or "none"
+    # The site's public address, used in emailed links (never taken from the request, which a visitor controls).
+    public_url: str = ""
+
+    @property
+    def mail_enabled(self) -> bool:
+        """Whether emails can be sent."""
+        return bool(self.smtp_host and (self.smtp_from or self.smtp_username))
 
 
 def load_settings() -> Settings:
@@ -76,4 +90,19 @@ def load_settings() -> Settings:
         careful_preprocess=tuple(
             p.strip() for p in os.getenv("OCR_CAREFUL_PREPROCESS", "flatten").split(",") if p.strip()
         ),
+        smtp_host=os.getenv("SMTP_HOST", "").strip(),
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        smtp_username=os.getenv("SMTP_USERNAME", "").strip(),
+        smtp_password=os.getenv("SMTP_PASSWORD", ""),
+        smtp_from=os.getenv("SMTP_FROM", "").strip(),
+        smtp_security=os.getenv("SMTP_SECURITY", "starttls").strip().lower(),
+        public_url=_public_url(),
     )
+
+
+def _public_url() -> str:
+    explicit = os.getenv("PUBLIC_URL", "").strip().rstrip("/")
+    if explicit:
+        return explicit
+    domain = os.getenv("DOMAIN", "").strip()
+    return f"https://{domain}" if domain else ""
